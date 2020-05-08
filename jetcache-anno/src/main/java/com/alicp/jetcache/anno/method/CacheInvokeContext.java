@@ -15,6 +15,7 @@ import java.util.function.Function;
  */
 public class CacheInvokeContext {
     private Invoker invoker;
+    private Invoker cacheLoadInvoker;
     private Method method;
     private Object[] args;
     private CacheInvokeConfig cacheInvokeConfig;
@@ -34,6 +35,14 @@ public class CacheInvokeContext {
 
     public Invoker getInvoker() {
         return invoker;
+    }
+
+    public Invoker getCacheLoadInvoker() {
+        return cacheLoadInvoker;
+    }
+
+    public void setCacheLoadInvoker(Invoker cacheLoadInvoker) {
+        this.cacheLoadInvoker = cacheLoadInvoker;
     }
 
     public Method getMethod() {

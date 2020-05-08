@@ -6,6 +6,7 @@ package com.alicp.jetcache.anno.method;
 import com.alicp.jetcache.anno.support.CacheInvalidateAnnoConfig;
 import com.alicp.jetcache.anno.support.CacheUpdateAnnoConfig;
 import com.alicp.jetcache.anno.support.CachedAnnoConfig;
+import com.alicp.jetcache.anno.support.FirstPageCachedAnnoConfig;
 
 import java.util.List;
 

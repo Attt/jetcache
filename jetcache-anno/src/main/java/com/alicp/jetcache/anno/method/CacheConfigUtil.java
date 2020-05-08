@@ -6,10 +6,7 @@ package com.alicp.jetcache.anno.method;
 import com.alicp.jetcache.CacheConfigException;
 import com.alicp.jetcache.RefreshPolicy;
 import com.alicp.jetcache.anno.*;
-import com.alicp.jetcache.anno.support.CacheInvalidateAnnoConfig;
-import com.alicp.jetcache.anno.support.CacheUpdateAnnoConfig;
-import com.alicp.jetcache.anno.support.CachedAnnoConfig;
-import com.alicp.jetcache.anno.support.PenetrationProtectConfig;
+import com.alicp.jetcache.anno.support.*;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
@@ -22,25 +19,25 @@ import java.util.concurrent.TimeUnit;
  */
 public class CacheConfigUtil {
     private static CachedAnnoConfig parseCached(Method m) {
-        Cached anno = m.getAnnotation(Cached.class);
-        if (anno == null) {
+        Cached cached = m.getAnnotation(Cached.class);
+        if (cached == null) {
             return null;
         }
         CachedAnnoConfig cc = new CachedAnnoConfig();
-        cc.setArea(anno.area());
-        cc.setName(anno.name());
-        cc.setCacheType(anno.cacheType());
-        cc.setEnabled(anno.enabled());
-        cc.setTimeUnit(anno.timeUnit());
-        cc.setExpire(anno.expire());
-        cc.setLocalExpire(anno.localExpire());
-        cc.setLocalLimit(anno.localLimit());
-        cc.setCacheNullValue(anno.cacheNullValue());
-        cc.setCondition(anno.condition());
-        cc.setPostCondition(anno.postCondition());
-        cc.setSerialPolicy(anno.serialPolicy());
-        cc.setKeyConvertor(anno.keyConvertor());
-        cc.setKey(anno.key());
+        cc.setArea(cached.area());
+        cc.setName(cached.name());
+        cc.setCacheType(cached.cacheType());
+        cc.setEnabled(cached.enabled());
+        cc.setTimeUnit(cached.timeUnit());
+        cc.setExpire(cached.expire());
+        cc.setLocalExpire(cached.localExpire());
+        cc.setLocalLimit(cached.localLimit());
+        cc.setCacheNullValue(cached.cacheNullValue());
+        cc.setCondition(cached.condition());
+        cc.setPostCondition(cached.postCondition());
+        cc.setSerialPolicy(cached.serialPolicy());
+        cc.setKeyConvertor(cached.keyConvertor());
+        cc.setKey(cached.key());
         cc.setDefineMethod(m);
 
         CacheRefresh cacheRefresh = m.getAnnotation(CacheRefresh.class);
@@ -56,6 +53,46 @@ public class CacheConfigUtil {
         }
 
         return cc;
+    }
+
+    private static FirstPageCachedAnnoConfig parseFirstPageCached(Method m) {
+        FirstPageCached firstPageCached = m.getAnnotation(FirstPageCached.class);
+        if (firstPageCached == null) {
+            return null;
+        }
+        FirstPageCachedAnnoConfig fpcc = new FirstPageCachedAnnoConfig();
+        fpcc.setArea(firstPageCached.area());
+        fpcc.setName(firstPageCached.name());
+        fpcc.setCacheType(firstPageCached.cacheType());
+        fpcc.setEnabled(firstPageCached.enabled());
+        fpcc.setTimeUnit(firstPageCached.timeUnit());
+        fpcc.setExpire(firstPageCached.expire());
+        fpcc.setLocalExpire(firstPageCached.localExpire());
+        fpcc.setLocalLimit(firstPageCached.localLimit());
+        fpcc.setCacheNullValue(firstPageCached.cacheNullValue());
+        fpcc.setCondition(firstPageCached.condition());
+        fpcc.setPostCondition(firstPageCached.postCondition());
+        fpcc.setSerialPolicy(firstPageCached.serialPolicy());
+        fpcc.setKeyConvertor(firstPageCached.keyConvertor());
+        fpcc.setKey(firstPageCached.key());
+        fpcc.setFetchPageNumber(ClassUtil.fetchPageNumberByAnnotation());
+        // todo
+        fpcc.setEntityLoader(firstPageCached.entityLoader());
+        fpcc.setDefineMethod(m);
+
+        CacheRefresh cacheRefresh = m.getAnnotation(CacheRefresh.class);
+        if (cacheRefresh != null) {
+            RefreshPolicy policy = parseRefreshPolicy(cacheRefresh);
+            fpcc.setRefreshPolicy(policy);
+        }
+
+        CachePenetrationProtect protectAnno = m.getAnnotation(CachePenetrationProtect.class);
+        if (protectAnno != null) {
+            PenetrationProtectConfig protectConfig = parsePenetrationProtectConfig(protectAnno);
+            fpcc.setPenetrationProtectConfig(protectConfig);
+        }
+
+        return fpcc;
     }
 
     public static PenetrationProtectConfig parsePenetrationProtectConfig(CachePenetrationProtect protectAnno) {
@@ -145,10 +182,17 @@ public class CacheConfigUtil {
     public static boolean parse(CacheInvokeConfig cac, Method method) {
         boolean hasAnnotation = false;
         CachedAnnoConfig cachedConfig = parseCached(method);
+        FirstPageCachedAnnoConfig firstPageCachedAnnoConfig = parseFirstPageCached(method);
+        if (firstPageCachedAnnoConfig != null) {
+            cac.setCachedAnnoConfig(firstPageCachedAnnoConfig);
+            hasAnnotation = true;
+        }
+
         if (cachedConfig != null) {
             cac.setCachedAnnoConfig(cachedConfig);
             hasAnnotation = true;
         }
+
         boolean enable = parseEnableCache(method);
         if (enable) {
             cac.setEnableCacheContext(true);

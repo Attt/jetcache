@@ -23,6 +23,7 @@ public interface CacheConsts {
     String UNDEFINED_STRING = "$$undefined$$";
     int UNDEFINED_INT = Integer.MIN_VALUE;
     long UNDEFINED_LONG = Long.MIN_VALUE;
+    String FIRST_PAGE = "1";
 
     static boolean isUndefined(String value) {
         return UNDEFINED_STRING.equals(value);

@@ -4,6 +4,7 @@
 package com.alicp.jetcache.anno.method;
 
 import com.alicp.jetcache.*;
+import com.alicp.jetcache.anno.CacheConsts;
 import com.alicp.jetcache.anno.support.*;
 import com.alicp.jetcache.event.CacheLoadEvent;
 import org.slf4j.Logger;
@@ -90,7 +91,11 @@ public class CacheHandler implements InvocationHandler {
         CacheInvokeConfig cic = context.getCacheInvokeConfig();
         CachedAnnoConfig cachedConfig = cic.getCachedAnnoConfig();
         if (cachedConfig != null && (cachedConfig.isEnabled() || CacheContextSupport._isEnabled())) {
-            return invokeWithCached(context);
+            if(cachedConfig instanceof FirstPageCachedAnnoConfig){
+                return invokeWithFirstPageCached(context);
+            }else {
+                return invokeWithCached(context);
+            }
         } else if (cic.getInvalidateAnnoConfigs() != null || cic.getUpdateAnnoConfig() != null) {
             return invokeWithInvalidateOrUpdate(context);
         } else {
@@ -214,6 +219,52 @@ public class CacheHandler implements InvocationHandler {
         }
     }
 
+    private static Object invokeWithFirstPageCached(CacheInvokeContext context)
+            throws Throwable {
+        CacheInvokeConfig cic = context.getCacheInvokeConfig();
+        FirstPageCachedAnnoConfig fpcac = (FirstPageCachedAnnoConfig) cic.getCachedAnnoConfig();
+        Cache cache = context.getCacheFunction().apply(context, fpcac);
+
+        if (cache == null) {
+            logger.error("no cache with name: " + context.getMethod());
+            return invokeOrigin(context);
+        }
+
+        Object key = ExpressionUtil.evalKey(context, cic.getCachedAnnoConfig());
+        if (key == null) {
+            return loadAndCount(context, cache, key);
+        }
+
+        Object pageNumber = fpcac.getFetchPageNumber().apply(context.getMethod(), context.getArgs());
+        if (!CacheConsts.FIRST_PAGE.equals(String.valueOf(pageNumber))) {
+            return loadAndCount(context, cache, key);
+        }
+
+        if (!ExpressionUtil.evalCondition(context, cic.getCachedAnnoConfig())) {
+            return loadAndCount(context, cache, key);
+        }
+
+        try {
+            CacheLoader loader = new CacheLoader() {
+                @Override
+                public Object load(Object k) throws Throwable {
+                    Object result = invokeLoad(context);
+                    context.setResult(result);
+                    return result;
+                }
+
+                @Override
+                public boolean vetoCacheUpdate() {
+                    return !ExpressionUtil.evalPostCondition(context, cic.getCachedAnnoConfig());
+                }
+            };
+            Object result = cache.computeIfAbsent(key, loader);
+            return result;
+        } catch (CacheInvokeException e) {
+            throw e.getCause();
+        }
+    }
+
     private static Object invokeWithCached(CacheInvokeContext context)
             throws Throwable {
         CacheInvokeConfig cic = context.getCacheInvokeConfig();
@@ -276,6 +327,14 @@ public class CacheHandler implements InvocationHandler {
 
     private static Object invokeOrigin(CacheInvokeContext context) throws Throwable {
         return context.getInvoker().invoke();
+    }
+
+    private static Object invokeLoad(CacheInvokeContext context) throws Throwable {
+        Invoker cacheLoadInvoker = context.getCacheLoadInvoker();
+        if(cacheLoadInvoker == null){
+            return context.getInvoker().invoke();
+        }
+        return cacheLoadInvoker.invoke();
     }
 
     public static class CacheHandlerRefreshCache<K, V> extends RefreshCache<K, V> {

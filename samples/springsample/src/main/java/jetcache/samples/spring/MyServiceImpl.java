@@ -28,8 +28,20 @@ public class MyServiceImpl implements MyService {
 
     @Override
     public void cachedDemo() {
-        userService.loadUser(1);
-        userService.loadUser(1);
+//        userService.loadUser(1);
+//        userService.loadUser(1);
+        System.out.println(userService.fetchUsers(1, 20));
+        System.out.println(userService.fetchUsers(2, 20));
+        System.out.println(userService.fetchUsers(1, 20));
+
+        Page page = new Page();
+        page.setPageSize(20L);
+        page.setPageNumber(1L);
+        System.out.println(userService.fetchUsers0(page));
+        page.setPageNumber(2L);
+        System.out.println(userService.fetchUsers0(page));
+        page.setPageNumber(1L);
+        System.out.println(userService.fetchUsers0(page));
         try {
             Thread.sleep(60000);
         } catch (InterruptedException e) {

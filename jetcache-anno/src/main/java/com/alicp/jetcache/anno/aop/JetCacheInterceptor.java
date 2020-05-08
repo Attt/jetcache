@@ -3,9 +3,12 @@
  */
 package com.alicp.jetcache.anno.aop;
 
+import com.alicp.jetcache.anno.PageId;
+import com.alicp.jetcache.anno.PageParameter;
 import com.alicp.jetcache.anno.method.CacheHandler;
 import com.alicp.jetcache.anno.method.CacheInvokeConfig;
 import com.alicp.jetcache.anno.method.CacheInvokeContext;
+import com.alicp.jetcache.anno.method.Invoker;
 import com.alicp.jetcache.anno.support.ConfigMap;
 import com.alicp.jetcache.anno.support.ConfigProvider;
 import com.alicp.jetcache.anno.support.GlobalCacheConfig;
@@ -16,7 +19,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.Arrays;
+
+import static com.alicp.jetcache.anno.method.ClassUtil.fetchPageNumberByAnnotation;
 
 /**
  * @author <a href="mailto:areyouok@gmail.com">huangli</a>
@@ -53,7 +61,7 @@ public class JetCacheInterceptor implements MethodInterceptor, ApplicationContex
         CacheInvokeConfig cac = null;
         if (obj != null) {
             String key = CachePointcut.getKey(method, obj.getClass());
-            cac  = cacheConfigMap.getByMethodInfo(key);
+            cac = cacheConfigMap.getByMethodInfo(key);
         }
 
         /*
@@ -73,6 +81,7 @@ public class JetCacheInterceptor implements MethodInterceptor, ApplicationContex
         CacheInvokeContext context = configProvider.getCacheContext().createCacheInvokeContext(cacheConfigMap);
         context.setTargetObject(invocation.getThis());
         context.setInvoker(invocation::proceed);
+        context.setCacheLoadInvoker(invocation::proceed);
         context.setMethod(method);
         context.setArgs(invocation.getArguments());
         context.setCacheInvokeConfig(cac);

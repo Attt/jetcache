@@ -3,6 +3,8 @@
  */
 package jetcache.samples.spring;
 
+import com.alicp.jetcache.anno.ReferKey;
+
 import java.io.Serializable;
 
 /**
@@ -10,6 +12,8 @@ import java.io.Serializable;
  */
 public class User implements Serializable {
     private static final long serialVersionUID = -5157877924507849953L;
+
+    @ReferKey
     private long userId;
     private String userName;
 
@@ -27,5 +31,13 @@ public class User implements Serializable {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "userId=" + userId +
+                ", userName='" + userName + '\'' +
+                '}';
     }
 }
